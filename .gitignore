@@ -361,3 +361,12 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Holdfast SDK
+/Library/
+/Logs/
+/obj/
+/Packages/
+/Temp/
+/Assets/*
+!/Assets/Player Stats/
