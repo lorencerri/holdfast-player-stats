@@ -1,20 +1,29 @@
 ﻿using HoldfastSharedMethods;
-using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Reflection;
 using UnityEngine;
 using UnityEngine.UI;
 
-/*
- * TODO:
- * Player Dictionary
- */
 public class PlayerStatsMod : IHoldfastSharedMethods
 {
     private InputField f1MenuInputField;
     public static Dictionary<int, playerStruct> playerIdDictionary = new Dictionary<int, playerStruct>();
-    private int key = 0;
+    private string token = "";
+
+    private void SendEvent(string e, WWWForm form)
+    {
+
+        if (token.Equals("")) { 
+            Debug.Log("No token provided for PlayerStatsMod, aborting stat post...");
+            return;
+        }
+
+        form.AddField("event", e);
+        form.AddField("token", token);
+
+        WWW www = new WWW("https://holdfast-api.plexidev.org/event", form);
+        Debug.Log(www.text);
+    }
 
     public void OnIsServer(bool server)
     {
@@ -42,25 +51,37 @@ public class PlayerStatsMod : IHoldfastSharedMethods
 
     public void OnTextMessage(int playerId, TextChatChannel channel, string text)
     {
-
         var player = playerIdDictionary[playerId];
+        if (player._isBot) return;
 
-        WWWForm form = new WWWForm();
-        form.AddField("playerId", playerId);
-        form.AddField("channel", (int)channel);
-        form.AddField("steamId", (int)player._steamId);
-        form.AddField("playerName", player._playerName);
-        form.AddField("regimentTag", player._regimentTag);
-        form.AddField("text", text);
+        WWWForm data = new WWWForm();
 
-        new WWW("https://api.plexidev.org/api", form);
+        data.AddField("playerId", playerId);
+        data.AddField("steamId", (int)player._steamId);
+        data.AddField("playerName", player._playerName);
+        data.AddField("regimentTag", player._regimentTag);
+        data.AddField("text", text);
 
-        // Repeat any messages
-        f1MenuInputField.onEndEdit.Invoke(string.Format("serverAdmin privateMessage {0} {1} - 2", playerId, text));
+        SendEvent("message", data);
     }
 
     public void PassConfigVariables(string[] value)
     {
+        for (int i = 0; i < value.Length; i++)
+        {
+            var splitData = value[i].Split(':');
+            if (splitData.Length != 3) continue; 
+
+            if (splitData[0] == "2715432949")
+            {
+                if (splitData[1] == "token")
+                {
+                    Debug.Log("[PlayerStats] Token Found");
+                    token = splitData[2];
+                }
+            }
+
+        }
     }
 
     public void OnSyncValueState(int value)
@@ -100,7 +121,27 @@ public class PlayerStatsMod : IHoldfastSharedMethods
 
     public void OnPlayerKilledPlayer(int killerPlayerId, int victimPlayerId, EntityHealthChangedReason reason, string additionalDetails)
     {
+        var killer = playerIdDictionary[killerPlayerId];
+        var victim = playerIdDictionary[victimPlayerId];
 
+        WWWForm data = new WWWForm();
+
+        data.AddField("killerId", killerPlayerId);
+        data.AddField("victimId", victimPlayerId);
+
+        data.AddField("killerSteamId", (int)killer._steamId);
+        data.AddField("victimSteamId", (int)victim._steamId);
+
+        data.AddField("killerPlayerName", killer._playerName);
+        data.AddField("victimPlayerName", victim._playerName);
+
+        data.AddField("killerRegimentTag", killer._regimentTag);
+        data.AddField("victimRegimentTag", victim._regimentTag);
+
+        data.AddField("reason", (int)reason);
+        data.AddField("details", additionalDetails);
+
+        SendEvent("playerKilledPlayer", data);
     }
 
     public void OnPlayerShoot(int playerId, bool dryShot)
@@ -110,6 +151,7 @@ public class PlayerStatsMod : IHoldfastSharedMethods
 
     public void OnPlayerJoined(int playerId, ulong steamId, string playerName, string regimentTag, bool isBot)
     {
+        if (isBot) steamId = 0;
         playerStruct temp = new playerStruct()
         {
             _steamId = steamId,
@@ -147,7 +189,16 @@ public class PlayerStatsMod : IHoldfastSharedMethods
 
     public void OnPlayerMeleeStartSecondaryAttack(int playerId)
     {
+        var player = playerIdDictionary[playerId];
 
+        WWWForm data = new WWWForm();
+
+        data.AddField("playerId", playerId);
+        data.AddField("steamId", (int)player._steamId);
+        data.AddField("playerName", player._playerName);
+        data.AddField("regimentTag", player._regimentTag);
+
+        SendEvent("playerMeleeStartSecondaryAttack", data);
     }
 
     public void OnPlayerWeaponSwitch(int playerId, string weapon)
