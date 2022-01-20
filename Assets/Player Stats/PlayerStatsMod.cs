@@ -13,7 +13,8 @@ public class PlayerStatsMod : IHoldfastSharedMethods
     private void SendEvent(string e, WWWForm form)
     {
 
-        if (token.Equals("")) { 
+        if (token.Equals(""))
+        {
             Debug.Log("No token provided for PlayerStatsMod, aborting stat post...");
             return;
         }
@@ -21,8 +22,7 @@ public class PlayerStatsMod : IHoldfastSharedMethods
         form.AddField("event", e);
         form.AddField("token", token);
 
-        WWW www = new WWW("https://holdfast-api.plexidev.org/event", form);
-        Debug.Log(www.text);
+        new WWW("https://holdfast-api.plexidev.org/event", form);
     }
 
     public void OnIsServer(bool server)
@@ -51,18 +51,7 @@ public class PlayerStatsMod : IHoldfastSharedMethods
 
     public void OnTextMessage(int playerId, TextChatChannel channel, string text)
     {
-        var player = playerIdDictionary[playerId];
-        if (player._isBot) return;
 
-        WWWForm data = new WWWForm();
-
-        data.AddField("playerId", playerId);
-        data.AddField("steamId", (int)player._steamId);
-        data.AddField("playerName", player._playerName);
-        data.AddField("regimentTag", player._regimentTag);
-        data.AddField("text", text);
-
-        SendEvent("message", data);
     }
 
     public void PassConfigVariables(string[] value)
@@ -70,7 +59,7 @@ public class PlayerStatsMod : IHoldfastSharedMethods
         for (int i = 0; i < value.Length; i++)
         {
             var splitData = value[i].Split(':');
-            if (splitData.Length != 3) continue; 
+            if (splitData.Length != 3) continue;
 
             if (splitData[0] == "2715432949")
             {
