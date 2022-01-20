@@ -178,7 +178,8 @@
      <Compile Include="Assets\MicroSplat\Core\Scripts\MicroSplatRuntimeUtil.cs" />
      <Compile Include="Assets\MicroSplat\Core\Scripts\MicroSplatTerrain.cs" />
      <Compile Include="Assets\MicroSplat\Core\Scripts\TextureArrayConfig.cs" />
-     <Compile Include="Assets\Player Stats\PlayerStatsMod.cs" />
+     <Compile Include="Assets\Player Stats\EventHandler.cs" />
+     <Compile Include="Assets\Player Stats\PlayerStats.cs" />
      <None Include="Assets\Holdfast Common\Terrains\MicroSplatData\MicroSplat_Base.shader" />
      <None Include="Assets\MicroSplat\Core\Examples\Scene\MicroSplatData\MicroSplat_Base.shader" />
      <None Include="Assets\Holdfast Common\Shaders\Cloth-DoubleSided.shader" />
