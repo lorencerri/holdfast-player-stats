@@ -402,6 +402,9 @@
  <Reference Include="UMod-Shared-Editor">
  <HintPath>C:/Program Files (x86)/Steam/steamapps/common/Holdfast Nations At War - SDK/Holdfast NaW Project - SDK/Assets/Holdfast Nations At War - SDK/UMod/Plugin/Editor/UMod-Shared-Editor.dll</HintPath>
  </Reference>
+ <Reference Include="Newtonsoft.Json">
+ <HintPath>C:/Program Files (x86)/Steam/steamapps/common/Holdfast Nations At War - SDK/Holdfast NaW Project - SDK/Assets/JsonDotNet/Assemblies/Standalone/Newtonsoft.Json.dll</HintPath>
+ </Reference>
  <Reference Include="mscorlib">
  <HintPath>C:/Program Files/Unity/Editor/Data/MonoBleedingEdge/lib/mono/2.0-api/mscorlib.dll</HintPath>
  </Reference>

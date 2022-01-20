@@ -10,6 +10,7 @@ public class EventHandler : IHoldfastSharedMethods
 
     public void OnIsServer(bool server)
     {
+        // Why? http://answers.unity.com/answers/1269136/view.html
         playerStats = (new GameObject("PlayerStats")).AddComponent<PlayerStats>();
 
         var canvases = Resources.FindObjectsOfTypeAll<Canvas>();
@@ -17,8 +18,8 @@ public class EventHandler : IHoldfastSharedMethods
         {
             if (string.Compare(canvases[i].name, "Game Console Panel", true) == 0)
             {
-                playerStats.setInputField(canvases[i].GetComponentInChildren<InputField>(true));
-                if (playerStats.getInputField() != null)
+                playerStats.SetInputField(canvases[i].GetComponentInChildren<InputField>(true));
+                if (playerStats.GetInputField() != null)
                 {
                     Debug.Log("Found the Game Console Panel");
                 }
@@ -48,7 +49,11 @@ public class EventHandler : IHoldfastSharedMethods
                 if (splitData[1] == "token")
                 {
                     Debug.Log("[PlayerStats] Token Found");
-                    playerStats.setToken(splitData[2]);
+                    playerStats.SetToken(splitData[2]);
+                } else if (splitData[1] == "feedback")
+                {
+                    Debug.Log("[PlayerStats] Feedback Option Passed");
+                    playerStats.SetFeedback(bool.Parse(splitData[2]));
                 }
             }
 
