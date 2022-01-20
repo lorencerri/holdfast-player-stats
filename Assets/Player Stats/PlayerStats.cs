@@ -44,7 +44,6 @@ public class PlayerStats : MonoBehaviour
         form.AddField("token", _token);
         form.AddField("feedback", _feedback.ToString());
 
-        Debug.Log("Sending event to API for processing...");
         WWW www = new WWW("https://holdfast-api.plexidev.org/event", form);
 
         if (_feedback) StartCoroutine(WaitForRequest(www));
