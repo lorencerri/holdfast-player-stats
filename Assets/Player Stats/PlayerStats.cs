@@ -11,7 +11,7 @@ public class PlayerStats : MonoBehaviour
     private InputField _f1MenuInputField;
     private string _token;
     private bool _feedback = true;
-
+    
     public void SetInputField(InputField f1MenuInputField)
     {
         _f1MenuInputField = f1MenuInputField;

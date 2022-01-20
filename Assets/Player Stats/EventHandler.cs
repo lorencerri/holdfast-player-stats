@@ -8,6 +8,14 @@ public class EventHandler : IHoldfastSharedMethods
     public static Dictionary<int, playerStruct> playerIdDictionary = new Dictionary<int, playerStruct>();
     public PlayerStats playerStats;
 
+    public class playerStruct
+    {
+        internal ulong _steamId;
+        internal bool _isBot;
+        internal string _regimentTag;
+        internal string _playerName;
+    }
+
     public void OnIsServer(bool server)
     {
         // Why? http://answers.unity.com/answers/1269136/view.html
@@ -32,9 +40,17 @@ public class EventHandler : IHoldfastSharedMethods
         }
     }
 
-    public void OnTextMessage(int playerId, TextChatChannel channel, string text)
+    public void OnPlayerJoined(int playerId, ulong steamId, string playerName, string regimentTag, bool isBot)
     {
-
+        if (isBot) steamId = 0;
+        playerStruct temp = new playerStruct()
+        {
+            _steamId = steamId,
+            _playerName = playerName,
+            _regimentTag = regimentTag,
+            _isBot = isBot
+        };
+        playerIdDictionary[playerId] = temp;
     }
 
     public void PassConfigVariables(string[] value)
@@ -58,6 +74,44 @@ public class EventHandler : IHoldfastSharedMethods
             }
 
         }
+    }
+
+    public void OnPlayerKilledPlayer(int killerPlayerId, int victimPlayerId, EntityHealthChangedReason reason, string additionalDetails)
+    {
+        var killer = playerIdDictionary[killerPlayerId];
+        var victim = playerIdDictionary[victimPlayerId];
+
+        WWWForm data = new WWWForm();
+
+        data.AddField("killerId", killerPlayerId);
+        data.AddField("victimId", victimPlayerId);
+
+        data.AddField("killerSteamId", (int)killer._steamId);
+        data.AddField("victimSteamId", (int)victim._steamId);
+
+        data.AddField("killerPlayerName", killer._playerName);
+        data.AddField("victimPlayerName", victim._playerName);
+
+        data.AddField("killerRegimentTag", killer._regimentTag);
+        data.AddField("victimRegimentTag", victim._regimentTag);
+
+        data.AddField("reason", (int)reason);
+        data.AddField("details", additionalDetails);
+
+        playerStats.SendEvent("playerKilledPlayer", data);
+    }
+
+    public void OnPlayerLeft(int playerId)
+    {
+        playerIdDictionary.Remove(playerId);
+    }
+
+    // Unused Methods
+    // I'll try to add stat tracking for some in the future
+
+    public void OnTextMessage(int playerId, TextChatChannel channel, string text)
+    {
+
     }
 
     public void OnSyncValueState(int value)
@@ -95,52 +149,9 @@ public class EventHandler : IHoldfastSharedMethods
 
     }
 
-    public void OnPlayerKilledPlayer(int killerPlayerId, int victimPlayerId, EntityHealthChangedReason reason, string additionalDetails)
-    {
-        var killer = playerIdDictionary[killerPlayerId];
-        var victim = playerIdDictionary[victimPlayerId];
-
-        WWWForm data = new WWWForm();
-
-        data.AddField("killerId", killerPlayerId);
-        data.AddField("victimId", victimPlayerId);
-
-        data.AddField("killerSteamId", (int)killer._steamId);
-        data.AddField("victimSteamId", (int)victim._steamId);
-
-        data.AddField("killerPlayerName", killer._playerName);
-        data.AddField("victimPlayerName", victim._playerName);
-
-        data.AddField("killerRegimentTag", killer._regimentTag);
-        data.AddField("victimRegimentTag", victim._regimentTag);
-
-        data.AddField("reason", (int)reason);
-        data.AddField("details", additionalDetails);
-
-        playerStats.SendEvent("playerKilledPlayer", data);
-    }
-
     public void OnPlayerShoot(int playerId, bool dryShot)
     {
 
-    }
-
-    public void OnPlayerJoined(int playerId, ulong steamId, string playerName, string regimentTag, bool isBot)
-    {
-        if (isBot) steamId = 0;
-        playerStruct temp = new playerStruct()
-        {
-            _steamId = steamId,
-            _playerName = playerName,
-            _regimentTag = regimentTag,
-            _isBot = isBot
-        };
-        playerIdDictionary[playerId] = temp;
-    }
-
-    public void OnPlayerLeft(int playerId)
-    {
-        playerIdDictionary.Remove(playerId);
     }
 
     public void OnPlayerSpawned(int playerId, int spawnSectionId, FactionCountry playerFaction, PlayerClass playerClass, int uniformId, GameObject playerObject)
@@ -287,12 +298,4 @@ public class EventHandler : IHoldfastSharedMethods
     {
 
     }
-}
-
-public class playerStruct
-{
-    internal ulong _steamId;
-    internal bool _isBot;
-    internal string _regimentTag;
-    internal string _playerName;
 }
