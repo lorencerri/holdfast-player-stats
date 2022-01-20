@@ -56,17 +56,10 @@ public class PlayerStats : MonoBehaviour
 
         Response response = JsonConvert.DeserializeObject<Response>(www.text);
 
-        foreach (var message in response.Messages)
+        foreach (var command in response.Commands)
         {
-            string command = "serverAdmin privateMessage " + message.PlayerId + " " + message.Message;
             _f1MenuInputField.onEndEdit.Invoke(command);
         }
-    }
-
-    public class Query
-    {
-        public string PlayerId { get; set; }
-        public string Message { get; set; }
     }
 
     public class Response
@@ -74,8 +67,8 @@ public class PlayerStats : MonoBehaviour
         [JsonProperty("code")]
         public string Code { get; set; }
 
-        [JsonProperty("messages")]
-        public List<Query> Messages { get; set; }
+        [JsonProperty("commands")]
+        public List<String> Commands { get; set; }
     }
 }
 
