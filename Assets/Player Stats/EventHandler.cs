@@ -1,42 +1,24 @@
 ﻿using HoldfastSharedMethods;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class PlayerStatsMod : IHoldfastSharedMethods
+public class EventHandler : IHoldfastSharedMethods
 {
-    private InputField f1MenuInputField;
     public static Dictionary<int, playerStruct> playerIdDictionary = new Dictionary<int, playerStruct>();
-    private string token = "";
-
-    private void SendEvent(string e, WWWForm form)
-    {
-
-        if (token.Equals(""))
-        {
-            Debug.Log("No token provided for PlayerStatsMod, aborting stat post...");
-            return;
-        }
-
-        form.AddField("event", e);
-        form.AddField("token", token);
-
-        new WWW("https://holdfast-api.plexidev.org/event", form);
-    }
+    public PlayerStats playerStats;
 
     public void OnIsServer(bool server)
     {
-        // Get all the canvas items in the game
+        playerStats = (new GameObject("PlayerStats")).AddComponent<PlayerStats>();
+
         var canvases = Resources.FindObjectsOfTypeAll<Canvas>();
         for (int i = 0; i < canvases.Length; i++)
         {
-            // Find the one that's called "Game Console Panel"
             if (string.Compare(canvases[i].name, "Game Console Panel", true) == 0)
             {
-                // Inside this, now we need to find the input field where the player types messages.
-                f1MenuInputField = canvases[i].GetComponentInChildren<InputField>(true);
-                if (f1MenuInputField != null)
+                playerStats.setInputField(canvases[i].GetComponentInChildren<InputField>(true));
+                if (playerStats.getInputField() != null)
                 {
                     Debug.Log("Found the Game Console Panel");
                 }
@@ -66,7 +48,7 @@ public class PlayerStatsMod : IHoldfastSharedMethods
                 if (splitData[1] == "token")
                 {
                     Debug.Log("[PlayerStats] Token Found");
-                    token = splitData[2];
+                    playerStats.setToken(splitData[2]);
                 }
             }
 
@@ -130,7 +112,7 @@ public class PlayerStatsMod : IHoldfastSharedMethods
         data.AddField("reason", (int)reason);
         data.AddField("details", additionalDetails);
 
-        SendEvent("playerKilledPlayer", data);
+        playerStats.SendEvent("playerKilledPlayer", data);
     }
 
     public void OnPlayerShoot(int playerId, bool dryShot)
@@ -178,16 +160,7 @@ public class PlayerStatsMod : IHoldfastSharedMethods
 
     public void OnPlayerMeleeStartSecondaryAttack(int playerId)
     {
-        var player = playerIdDictionary[playerId];
 
-        WWWForm data = new WWWForm();
-
-        data.AddField("playerId", playerId);
-        data.AddField("steamId", (int)player._steamId);
-        data.AddField("playerName", player._playerName);
-        data.AddField("regimentTag", player._regimentTag);
-
-        SendEvent("playerMeleeStartSecondaryAttack", data);
     }
 
     public void OnPlayerWeaponSwitch(int playerId, string weapon)
