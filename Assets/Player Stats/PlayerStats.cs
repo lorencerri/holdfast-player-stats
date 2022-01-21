@@ -6,64 +6,79 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class PlayerStats : MonoBehaviour
-{
-    private InputField _f1MenuInputField;
-    private string _token;
-    private bool _feedback = true;
-    
-    public void SetInputField(InputField f1MenuInputField)
-    {
-        _f1MenuInputField = f1MenuInputField;
+// TODO
+// Queue system for API events
+
+public class PlayerStats : MonoBehaviour {
+
+    public PlayerStats() {
+        this.Feedback = true;
+        this.IsConfigSet = false;
     }
 
-    public InputField GetInputField()
-    {
-        return _f1MenuInputField;
+    public InputField F1MenuInputField { get; set; }
+    public string Token { get; set; }
+    public bool Feedback { get; set; }
+    public bool IsConfigSet { get; set; }
+
+    public void SendEvent(string e, WWWForm form) {
+        StartCoroutine(SendRequest(e, form));
     }
 
-    public void SetFeedback(bool feedback) {
-        _feedback = feedback;
-    }
+    IEnumerator SendRequest(string e, WWWForm form) {
+        Debug.Log("[PlayerStatsMod] Sending request...");
 
-    public void SetToken(string token)
-    {
-        _token = token;
-    }
-
-    public void SendEvent(string e, WWWForm form)
-    {
-
-        if (_token.Equals(""))
-        {
-            Debug.Log("No token provided for PlayerStatsMod, aborting stat post...");
-            return;
+        if (F1MenuInputField == null) {
+            Debug.Log("[PlayerStatsMod] F1MenuInputField not yet initialized, aborting stat post...");
+            yield break; 
         }
 
-        form.AddField("event", e);
-        form.AddField("token", _token);
-        form.AddField("feedback", _feedback.ToString());
+        // Check if the config has been set
+        if (!IsConfigSet) { // If it hasn't, try again every 250ms for the next five seconds.
+            int attempts = 20;
+            while (attempts > 0) {
+                Debug.Log("[PlayerStatsMod] Config has not yet been initialized, waiting 250ms... | Attempts Remaining: " + attempts);
+                yield return new WaitForSeconds(0.25f);
+                if (IsConfigSet) break;
+                attempts -= 1;
+            }
+        }
 
+        // Check if Token has been initialized
+        if (Token == null) {
+            Debug.Log("[PlayerStatsMod] No token provided, aborting stat post...");
+            yield break;
+        }
+
+        // Add global options to form
+        form.AddField("event", e);
+        form.AddField("token", Token);
+        form.AddField("feedback", Feedback.ToString());
+
+        // Create request
         WWW www = new WWW("https://holdfast-api.plexidev.org/event", form);
 
-        if (_feedback) StartCoroutine(WaitForRequest(www));
-    }
-
-    IEnumerator WaitForRequest(WWW www)
-    {
-        if (_f1MenuInputField == null) { yield break; }
+        // Check if feedback is required
+        if (!Feedback) yield break;
         yield return www;
 
+        // Deserialize to JSON
         Response response = JsonConvert.DeserializeObject<Response>(www.text);
 
-        foreach (var command in response.Commands)
-        {
-            _f1MenuInputField.onEndEdit.Invoke(command);
+        // Select what to do based on the event
+        if (e == "playerKilledPlayer") {
+            // Run the commands received from the server
+            foreach (var command in response.Commands) {
+                F1MenuInputField.onEndEdit.Invoke(command);
+            }
+        } else if (e == "roundStart") {
+            // Store the round to reference
+
         }
+
     }
 
-    public class Response
-    {
+    public class Response {
         [JsonProperty("code")]
         public string Code { get; set; }
 
