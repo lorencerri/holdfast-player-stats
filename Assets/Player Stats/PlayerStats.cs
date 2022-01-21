@@ -20,16 +20,21 @@ public class PlayerStats : MonoBehaviour {
     public string Token { get; set; }
     public bool Feedback { get; set; }
     public bool IsConfigSet { get; set; }
+    public int RoundId { get; set; }
+
+    public static void Log(string message) {
+        Debug.Log("[PlayerStatsMod] " + message);
+    }
 
     public void SendEvent(string e, WWWForm form) {
         StartCoroutine(SendRequest(e, form));
     }
 
     IEnumerator SendRequest(string e, WWWForm form) {
-        Debug.Log("[PlayerStatsMod] Sending request...");
+        Log("Sending request...");
 
         if (F1MenuInputField == null) {
-            Debug.Log("[PlayerStatsMod] F1MenuInputField not yet initialized, aborting stat post...");
+            Log("F1MenuInputField not yet initialized, aborting stat post...");
             yield break; 
         }
 
@@ -37,7 +42,7 @@ public class PlayerStats : MonoBehaviour {
         if (!IsConfigSet) { // If it hasn't, try again every 250ms for the next five seconds.
             int attempts = 20;
             while (attempts > 0) {
-                Debug.Log("[PlayerStatsMod] Config has not yet been initialized, waiting 250ms... | Attempts Remaining: " + attempts);
+                Log("Config has not yet been initialized, waiting 250ms... | Attempts Remaining: " + attempts);
                 yield return new WaitForSeconds(0.25f);
                 if (IsConfigSet) break;
                 attempts -= 1;
@@ -46,7 +51,7 @@ public class PlayerStats : MonoBehaviour {
 
         // Check if Token has been initialized
         if (Token == null) {
-            Debug.Log("[PlayerStatsMod] No token provided, aborting stat post...");
+            Log("No token provided, aborting stat post...");
             yield break;
         }
 
@@ -62,18 +67,23 @@ public class PlayerStats : MonoBehaviour {
         if (!Feedback) yield break;
         yield return www;
 
+        Debug.Log(www.text);
+
         // Deserialize to JSON
         Response response = JsonConvert.DeserializeObject<Response>(www.text);
 
-        // Select what to do based on the event
-        if (e == "playerKilledPlayer") {
-            // Run the commands received from the server
-            foreach (var command in response.Commands) {
-                F1MenuInputField.onEndEdit.Invoke(command);
+        // Run the commands received from the server
+        if (response.Commands != null) {
+            for (var i = 0; i < response.Commands.Count; i++) {
+                F1MenuInputField.onEndEdit.Invoke(response.Commands[i]);
             }
-        } else if (e == "roundStart") {
-            // Store the round to reference
+        }
 
+        // Additional methods based on event
+        if (e == "roundStart") {
+            // Store the round to reference
+            RoundId = response.RoundId;
+            Log("Setting the RoundId to " + response.RoundId);
         }
 
     }
@@ -84,6 +94,9 @@ public class PlayerStats : MonoBehaviour {
 
         [JsonProperty("commands")]
         public List<String> Commands { get; set; }
+
+        [JsonProperty("roundId")]
+        public int RoundId { get; set; }
     }
 }
 

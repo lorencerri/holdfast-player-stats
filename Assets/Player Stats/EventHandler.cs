@@ -4,14 +4,15 @@ using UnityEngine;
 using UnityEngine.UI;
 
 public class EventHandler : IHoldfastSharedMethods {
-    public static Dictionary<int, playerStruct> playerIdDictionary = new Dictionary<int, playerStruct>();
+    public static Dictionary<int, Player> playerIdDictionary = new Dictionary<int, Player>();
     public PlayerStats playerStats;
 
-    public class playerStruct {
-        internal ulong _steamId;
-        internal bool _isBot;
-        internal string _regimentTag;
-        internal string _playerName;
+    public class Player {
+        public ulong SteamId;
+        public bool IsBot;
+        public string RegimentTag;
+        public string PlayerName;
+        public GameObject Obj;
     }
 
     public void OnIsServer(bool server) {
@@ -21,8 +22,8 @@ public class EventHandler : IHoldfastSharedMethods {
         for (int i = 0; i < canvases.Length; i++) {
             if (string.Compare(canvases[i].name, "Game Console Panel", true) == 0) {
                 playerStats.F1MenuInputField = (canvases[i].GetComponentInChildren<InputField>(true));
-                if (playerStats.F1MenuInputField != null) Debug.Log("Found the Game Console Panel");
-                else Debug.Log("Game Console Panel not found");
+                if (playerStats.F1MenuInputField != null) PlayerStats.Log("Found the Game Console Panel");
+                else PlayerStats.Log("Game Console Panel not found");
                 break;
             }
         }
@@ -30,11 +31,12 @@ public class EventHandler : IHoldfastSharedMethods {
 
     public void OnPlayerJoined(int playerId, ulong steamId, string playerName, string regimentTag, bool isBot) {
         if (isBot) steamId = 0;
-        playerStruct temp = new playerStruct() {
-            _steamId = steamId,
-            _playerName = playerName,
-            _regimentTag = regimentTag,
-            _isBot = isBot
+        Player temp = new Player() {
+            SteamId = steamId,
+            PlayerName = playerName,
+            RegimentTag = regimentTag,
+            IsBot = isBot,
+            Obj = null
         };
         playerIdDictionary[playerId] = temp;
     }
@@ -47,10 +49,10 @@ public class EventHandler : IHoldfastSharedMethods {
 
             if (splitData[0] == "2715432949") {
                 if (splitData[1] == "token") {
-                    Debug.Log("[PlayerStatsMod] Token Found");
+                    PlayerStats.Log("Token Found");
                     playerStats.Token = splitData[2];
                 } else if (splitData[1] == "feedback") {
-                    Debug.Log("[PlayerStatsMod] Feedback Option Passed");
+                    PlayerStats.Log("Feedback Option Passed");
                     playerStats.Feedback = bool.Parse(splitData[2]);
                 }
             }
@@ -59,6 +61,11 @@ public class EventHandler : IHoldfastSharedMethods {
     }
 
     public void OnPlayerKilledPlayer(int killerPlayerId, int victimPlayerId, EntityHealthChangedReason reason, string additionalDetails) {
+        if (playerStats.RoundId == 0) {
+            PlayerStats.Log("Round not initialized");
+            return;
+        }
+
         var killer = playerIdDictionary[killerPlayerId];
         var victim = playerIdDictionary[victimPlayerId];
 
@@ -66,16 +73,26 @@ public class EventHandler : IHoldfastSharedMethods {
 
         data.AddField("killerId", killerPlayerId);
         data.AddField("victimId", victimPlayerId);
-        data.AddField("killerSteamId", (int)killer._steamId);
-        data.AddField("victimSteamId", (int)victim._steamId);
-        data.AddField("killerPlayerName", killer._playerName);
-        data.AddField("victimPlayerName", victim._playerName);
-        data.AddField("killerRegimentTag", killer._regimentTag);
-        data.AddField("victimRegimentTag", victim._regimentTag);
+        data.AddField("killerSteamId", (int)killer.SteamId);
+        data.AddField("victimSteamId", (int)victim.SteamId);
+        data.AddField("killerPlayerName", killer.PlayerName);
+        data.AddField("victimPlayerName", victim.PlayerName);
+        data.AddField("killerRegimentTag", killer.RegimentTag);
+        data.AddField("victimRegimentTag", victim.RegimentTag);
+        data.AddField("killerPosition", killer.Obj.transform.position.ToString("F7"));
+        data.AddField("victimPosition", victim.Obj.transform.position.ToString("F7"));
+        data.AddField("roundId", playerStats.RoundId);
         data.AddField("reason", (int)reason);
         data.AddField("details", additionalDetails);
 
         playerStats.SendEvent("playerKilledPlayer", data);
+    }
+
+    public void OnPlayerSpawned(int playerId, int spawnSectionId, FactionCountry playerFaction, PlayerClass playerClass, int uniformId, GameObject playerObject) {
+        var player = playerIdDictionary[playerId];
+        if (player != null) {
+            playerIdDictionary[playerId].Obj = playerObject;
+        }
     }
 
     public void OnRoundDetails(int roundId, string serverName, string mapName, FactionCountry attackingFaction, FactionCountry defendingFaction, GameplayMode gameplayMode, GameType gameType) {
@@ -132,10 +149,6 @@ public class EventHandler : IHoldfastSharedMethods {
     }
 
     public void OnPlayerShoot(int playerId, bool dryShot) {
-
-    }
-
-    public void OnPlayerSpawned(int playerId, int spawnSectionId, FactionCountry playerFaction, PlayerClass playerClass, int uniformId, GameObject playerObject) {
 
     }
 
